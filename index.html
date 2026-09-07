@@ -31,16 +31,16 @@
       <section>
         <h2 class="text-xl font-semibold mb-3 border-b pb-2">The Challenge</h2>
         <p class="text-sm leading-relaxed text-slate-600">
-          Recommendation systems struggle with the <strong>cold-start problem</strong>: generating accurate predictions for new users with minimal interaction history[cite: 10]. This project frames user adaptation as a few-shot learning task, where models must rapidly adapt using only a small "support set" of 5 to 20 ratings[cite: 9, 10].
+          Recommendation systems struggle with the <strong>cold-start problem</strong>: generating accurate predictions for new users with minimal interaction history. This project frames user adaptation as a few-shot learning task, where models must rapidly adapt using only a small "support set" of 5 to 20 ratings.
         </p>
       </section>
 
       <section>
         <h2 class="text-xl font-semibold mb-3 border-b pb-2">Methodology</h2>
         <ul class="text-sm space-y-3 text-slate-600">
-          <li><strong>Representation Learning:</strong> A custom SimCLR-inspired pipeline learns robust, continuous movie embeddings from unstructured metadata using stochastic masking and noise[cite: 9, 10].</li>
-          <li><strong>Meta-Learning Regressors:</strong> Compares optimization-based approaches (Reptile) against metric-based (Matching Networks) to enable rapid adaptation to unseen user profiles[cite: 9, 10].</li>
-          <li><strong>Evaluation:</strong> Models are evaluated on user-disjoint train/test splits using Normalized Discounted Cumulative Gain (NDCG) to measure ranking quality[cite: 9, 10].</li>
+          <li><strong>Representation Learning:</strong> A custom SimCLR-inspired pipeline learns robust, continuous movie embeddings from unstructured metadata using stochastic masking and noise.</li>
+          <li><strong>Meta-Learning Regressors:</strong> Compares optimization-based approaches (Reptile) against metric-based (Matching Networks) to enable rapid adaptation to unseen user profiles.</li>
+          <li><strong>Evaluation:</strong> Models are evaluated on user-disjoint train/test splits using Normalized Discounted Cumulative Gain (NDCG) to measure ranking quality.</li>
         </ul>
       </section>
     </div>
