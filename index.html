@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An applied machine learning case study: predicting user preferences from 5–20 ratings, benchmarking four methods, and documenting what the experimental evidence supports.">
+  <meta name="theme-color" content="#0b111b">
+  <title>Few-Shot Personalization — Ilyes Ouldsaada</title>
+  <style>
+    :root { --bg:#0b111b; --panel:#111a27; --panel2:#162231; --line:#2a394b; --muted:#a1b0c2; --text:#f0f6fa; --lime:#d7f979; --blue:#9fc7ff; --orange:#ffbd8c; --violet:#b7a8fa; --max:1150px; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color:inherit; text-decoration:none; }
+    a:focus-visible,button:focus-visible { outline:3px solid var(--lime); outline-offset:4px; }
+    .wrap { width:min(var(--max),calc(100% - 52px)); margin-inline:auto; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; padding:28px 0 23px; border-bottom:1px solid var(--line); }
+    .brand { display:flex; align-items:center; gap:13px; font-weight:760; letter-spacing:-.035em; font-size:17px; }
+    .brandmark { width:34px; height:34px; display:grid; place-items:center; background:var(--lime); color:#111a21; border-radius:10px; font-size:18px; font-weight:900; }
+    .nav { display:flex; gap:26px; align-items:center; font-size:13px; color:var(--muted); font-weight:650; }
+    .nav a:hover { color:var(--lime); }
+    .hero { position:relative; overflow:hidden; padding:85px 0 74px; border-bottom:1px solid var(--line); }
+    .hero:before { content:""; position:absolute; pointer-events:none; width:740px; height:740px; border-radius:50%; background:radial-gradient(circle,#9fd77818 0%,#9fd77806 37%,transparent 68%); right:-130px; top:-235px; }
+    .hero-inner { position:relative; display:grid; grid-template-columns:1.4fr .8fr; gap:70px; align-items:center; }
+    .kicker,.overline { font-size:11px; letter-spacing:.15em; text-transform:uppercase; font-weight:800; color:var(--lime); }
+    h1 { font-size:clamp(44px,6vw,76px); line-height:1.08; letter-spacing:-.065em; margin:19px 0 22px; font-weight:820; }
+    h1 span { color:var(--lime); }
+    .intro { color:#c2cfdd; max-width:650px; font-size:18px; line-height:1.7; margin:0 0 33px; }
+    .actions { display:flex; flex-wrap:wrap; gap:13px; }
+    .button { display:inline-flex; justify-content:center; align-items:center; min-height:45px; border-radius:9px; padding:10px 19px; font-size:13px; font-weight:760; gap:9px; border:1px solid var(--line); }
+    .button.primary { background:var(--lime); border-color:var(--lime); color:#0b111b; }
+    .button.secondary { background:#1a2736; color:var(--text); }
+    .button:hover { transform:translateY(-1px); }
+    .hero-card { border:1px solid #53694d; border-radius:20px; background:linear-gradient(150deg,#1b3028, #121e27 70%); padding:28px; box-shadow:0 25px 80px #0005; }
+    .hero-card .small { color:#b7c7c1; font-size:11px; letter-spacing:.11em; text-transform:uppercase; font-weight:750; }
+    .hero-card .big { font-size:72px; line-height:1.1; font-weight:810; letter-spacing:-.07em; color:var(--lime); margin:17px 0 4px; }
+    .hero-card .caption { font-size:13px; color:#c4d0d4; margin:0; }
+    .hero-card .rule { height:1px; background:#425345; margin:23px 0; }
+    .minirow { display:flex; justify-content:space-between; gap:20px; font-size:12px; padding:7px 0; color:#c4d0d4; }
+    .minirow strong { color:var(--text); }
+    .section { padding:76px 0; border-bottom:1px solid var(--line); }
+    .head { display:flex; justify-content:space-between; align-items:end; gap:22px; margin-bottom:26px; }
+    .head h2 { margin:9px 0 0; font-size:clamp(30px,3.4vw,44px); line-height:1.15; letter-spacing:-.048em; }
+    .section-lead { color:var(--muted); max-width:500px; font-size:14px; margin:0; }
+    .problem-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:17px; }
+    .tile { border:1px solid var(--line); background:var(--panel); padding:25px; border-radius:14px; }
+    .tile-num { color:var(--lime); font-weight:850; font-size:12px; letter-spacing:.08em; }
+    .tile h3 { font-size:17px; letter-spacing:-.02em; margin:16px 0 7px; }
+    .tile p { color:var(--muted); font-size:13px; margin:0; line-height:1.7; }
+    .story-bar { border:1px solid #3a5150; background:#162629; display:flex; gap:13px; padding:17px 20px; border-radius:10px; font-size:13px; color:#c7dfdc; margin-top:19px; }
+    .story-bar strong { color:var(--lime); }
+    .method-flow { display:grid; grid-template-columns:repeat(5,1fr); margin:28px 0 0; gap:9px; }
+    .step { border-top:2px solid #5a735b; padding:14px 12px 0 0; }
+    .step .n { color:var(--lime); font-size:11px; font-weight:850; }
+    .step strong { display:block; font-size:13px; margin:7px 0 5px; }
+    .step p { font-size:12px; color:var(--muted); margin:0; line-height:1.55; }
+    .results-shell { border:1px solid var(--line); background:linear-gradient(180deg,#15202f,#111a27); border-radius:17px; padding:28px; }
+    .results-top { display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:18px; }
+    .results-top h3 { margin:0 0 5px; font-size:21px; letter-spacing:-.03em; }
+    .results-top p { font-size:12px; color:var(--muted); margin:0; }
+    .segmented { display:flex; background:#0b121d; border:1px solid var(--line); padding:5px; border-radius:11px; gap:4px; }
+    .segmented button { font:inherit; font-weight:750; font-size:12px; padding:9px 16px; border-radius:7px; border:0; color:var(--muted); background:transparent; cursor:pointer; }
+    .segmented button[aria-pressed="true"] { background:var(--lime); color:#10171f; }
+    .chart-body { padding:27px 0 6px; min-height:268px; display:grid; align-content:center; }
+    .chart-row { display:grid; grid-template-columns:155px 1fr 64px; align-items:center; gap:18px; margin:11px 0; }
+    .model-name { color:#e2ecf5; font-size:12px; font-weight:700; }
+    .track { height:21px; background:#2a3646; border-radius:5px; overflow:hidden; }
+    .fill { display:block; height:100%; border-radius:5px; min-width:1px; transition:width .3s ease; }
+    .number { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; text-align:right; }
+    .underchart { margin:12px 0 0; color:var(--muted); font-size:11px; }
+    .legendrow { display:flex; flex-wrap:wrap; gap:18px; font-size:11px; color:var(--muted); margin-top:15px; }
+    .legendrow span:before { content:""; display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--swatch); margin-right:7px; }
+    .takeaway { margin-top:23px; background:#243129; border:1px solid #415b3f; padding:19px 21px; border-radius:10px; font-size:13px; color:#d5e6d5; }
+    .takeaway strong { color:var(--lime); }
+    .warning { border:1px solid #705e46; background:#2a251e; padding:20px 22px; border-radius:11px; margin-top:20px; display:flex; gap:15px; }
+    .warning .warnicon { color:var(--orange); font-size:22px; line-height:1; }
+    .warning strong { color:#ffe0c5; font-size:14px; }
+    .warning p { margin:6px 0 0; color:#e0cfc0; font-size:13px; line-height:1.65; }
+    .warning a { text-decoration:underline; text-underline-offset:3px; }
+    .table-wrap { overflow-x:auto; margin-top:28px; border:1px solid var(--line); border-radius:12px; }
+    table { border-collapse:collapse; width:100%; min-width:520px; font-size:13px; }
+    th,td { text-align:right; padding:15px 18px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+    th:first-child,td:first-child { text-align:left; }
+    th { color:#c8d4e0; font-size:11px; text-transform:uppercase; letter-spacing:.06em; background:#1a2635; }
+    tr:last-child td { border-bottom:0; }
+    td { color:#c5d1df; }
+    td.best { color:var(--lime); font-weight:850; }
+    .methods { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; }
+    .method { padding:25px; border:1px solid var(--line); border-radius:13px; background:var(--panel); }
+    .method-meta { display:flex; gap:8px; margin-bottom:14px; }
+    .chip { border-radius:50px; background:#2a3b49; color:#bacfe0; padding:3px 10px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+    .chip.green { background:#283b28; color:var(--lime); }
+    .method h3 { margin:0 0 9px; font-size:19px; letter-spacing:-.03em; }
+    .method p { color:var(--muted); font-size:13px; margin:0; }
+    .bottom-grid { display:grid; grid-template-columns:1.1fr 1fr; gap:24px; }
+    .copy { font-size:14px; color:#c4d2e0; }
+    .copy p { margin:0 0 14px; }
+    .copy ul { padding-left:20px; margin-top:0; }
+    .copy li { margin:0 0 9px; }
+    .callout { padding:23px; border-radius:13px; border:1px solid #425944; background:#1a2a27; }
+    .callout h3 { color:var(--lime); font-size:17px; margin:0 0 10px; }
+    .callout p { color:#d0e1db; font-size:13px; margin:0 0 14px; }
+    .callout a { font-size:13px; font-weight:770; color:var(--lime); text-decoration:underline; text-underline-offset:4px; }
+    footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:14px; align-items:center; padding:38px 0 46px; color:var(--muted); font-size:12px; }
+    footer a { text-decoration:underline; text-underline-offset:3px; }
+    #load-error { color:#ffd9be; background:#35291f; border:1px solid #84603d; padding:20px; border-radius:8px; }
+    @media (max-width:840px) { .hero-inner { grid-template-columns:1fr; gap:35px; } .hero-card { max-width:490px; } .problem-grid { grid-template-columns:1fr; } .method-flow { grid-template-columns:repeat(3,1fr); row-gap:25px; } .bottom-grid { grid-template-columns:1fr; } }
+    @media (max-width:630px) { .wrap { width:min(var(--max),calc(100% - 36px)); } .nav { gap:14px; } .nav a:nth-child(2) { display:none; } .hero { padding:60px 0 52px; } h1 { font-size:46px; } .intro { font-size:16px; } .section { padding:55px 0; } .head { display:block; } .head h2 { margin-bottom:13px; } .method-flow { grid-template-columns:repeat(2,1fr); } .methods { grid-template-columns:1fr; } .results-shell { padding:19px; } .chart-row { grid-template-columns:98px 1fr 48px; gap:9px; } .model-name { font-size:11px; } .segmented button { padding:8px 12px; } }
+    @media (prefers-reduced-motion:reduce) { *,*:before,*:after { scroll-behavior:auto !important; transition:none !important; } }
+  </style>
+</head>
+<body>
+  <header class="wrap topbar">
+    <a class="brand" href="#top" aria-label="Back to top"><span class="brandmark">I.</span> Ilyes Ouldsaada <span style="color:#758ba3;font-weight:400">/ Research</span></a>
+    <nav class="nav" aria-label="Section navigation"><a href="#approach">Approach</a><a href="#results">Results</a><a href="#validation">Validation</a><a href="./README.md">README ↗</a></nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-inner">
+        <div>
+          <div class="kicker">Applied machine learning · Case study 01</div>
+          <h1>Learning from<br><span>just a few</span><br>signals.</h1>
+          <p class="intro">How accurately can we personalize recommendations for someone we've never seen before, using just 5–20 ratings? An end-to-end experiment in representation learning, meta-learning, and honest model evaluation.</p>
+          <div class="actions"><a class="button primary" href="#results">Explore the results <span aria-hidden="true">↘</span></a><a class="button secondary" href="./methods.py">View experiment code <span aria-hidden="true">↗</span></a></div>
+        </div>
+        <aside class="hero-card" aria-label="Experiment summary">
+          <div class="small">The evaluation problem</div>
+          <div class="big">5—20</div>
+          <p class="caption">known ratings per previously unseen user</p>
+          <div class="rule"></div>
+          <div class="minirow"><span>Dataset</span><strong>MovieLens-100K</strong></div>
+          <div class="minirow"><span>Methods compared</span><strong>4</strong></div>
+          <div class="minirow"><span>Held-out users / setting</span><strong>164</strong></div>
+          <div class="minirow"><span>Primary metric</span><strong>NDCG</strong></div>
+          <div class="minirow"><span>Study status</span><strong>Research prototype</strong></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="approach" class="section wrap">
+      <div class="head"><div><div class="overline">01 / Framing the problem</div><h2>Model choice is a decision.</h2></div><p class="section-lead">The practical question was not whether a sophisticated model could be trained. It was whether it offered useful gains over simpler approaches with very little user data.</p></div>
+      <div class="problem-grid">
+        <article class="tile"><div class="tile-num">01 / TARGET</div><h3>Personalize from little data</h3><p>Each test user provides a handful of known ratings. A model must use them to rank 10 other movies that same user has already rated.</p></article>
+        <article class="tile"><div class="tile-num">02 / TRADE-OFF</div><h3>Adaptation vs. simplicity</h3><p>Compare two lightweight baselines against two learning-to-adapt methods to assess when additional training complexity is worth it.</p></article>
+        <article class="tile"><div class="tile-num">03 / MEASURE</div><h3>Ranking quality, not hype</h3><p>Track NDCG, the variability across users, number of episodes, and training and inference time. A perfect NDCG is 1.0.</p></article>
+      </div>
+      <div class="story-bar"><span aria-hidden="true">↳</span><div><strong>Why this matters beyond movies:</strong> Making decisions from scarce observations is central to many personalization and risk problems. The transferable skill is defining the test, establishing a baseline, and defending a model choice with evidence.</div></div>
+      <div class="method-flow" aria-label="Experiment pipeline">
+        <div class="step"><span class="n">01</span><strong>Prepare</strong><p>Ratings + 19 movie genre flags</p></div>
+        <div class="step"><span class="n">02</span><strong>Represent</strong><p>SimCLR-style learned item embeddings</p></div>
+        <div class="step"><span class="n">03</span><strong>Sample</strong><p>User-disjoint support/query episodes</p></div>
+        <div class="step"><span class="n">04</span><strong>Train</strong><p>Two baselines + two meta-learners</p></div>
+        <div class="step"><span class="n">05</span><strong>Evaluate</strong><p>NDCG + experimental caveats</p></div>
+      </div>
+    </section>
+
+    <section id="results" class="section wrap">
+      <div class="head"><div><div class="overline">02 / Observed results</div><h2>What the models showed.</h2></div><p class="section-lead">Original single-run observations. Choose a support size to inspect the four recorded NDCG scores, then compare all settings in the table.</p></div>
+      <div class="results-shell">
+        <div class="results-top"><div><h3>Mean NDCG by method</h3><p>Ranking 10 held-out rated movies per unseen user · Higher is better</p></div>
+          <div class="segmented" role="group" aria-label="Number of support ratings"><button type="button" data-size="5" aria-pressed="true">5 ratings</button><button type="button" data-size="10" aria-pressed="false">10 ratings</button><button type="button" data-size="20" aria-pressed="false">20 ratings</button></div>
+        </div>
+        <div id="chart" class="chart-body" aria-live="polite"><p style="color:var(--muted)">Loading recorded experiment results…</p></div>
+        <p class="underchart">Bars begin at zero; hover or inspect the value labels for exact recorded scores. Results are exploratory, not a fair paired model comparison.</p>
+        <div class="legendrow"><span style="--swatch:var(--blue)">Linear regression</span><span style="--swatch:var(--violet)">kNN</span><span style="--swatch:var(--orange)">Matching network</span><span style="--swatch:var(--lime)">Reptile</span></div>
+        <div class="takeaway" id="takeaway"><strong>Reading the experiment:</strong> Recorded results are descriptive. The original evaluation used different random test episodes for different models; see the limitation below.</div>
+      </div>
+      <div class="warning" role="note"><div class="warnicon" aria-hidden="true">!</div><div><strong>Experimental integrity note</strong><p>The archived results evaluated each model using <em>different randomly selected test ratings</em> for the same held-out users. I corrected the code to use identical episode draws across models for future runs, but these historical numbers have <strong>not</strong> been regenerated. They cannot establish a statistically validated winner. <a href="./docs/experiment_design.md">Read the evaluation audit →</a></p></div></div>
+      <div class="table-wrap"><table><caption style="position:absolute;left:-9999px">Archived NDCG scores for the four models by support set size</caption><thead><tr><th scope="col">Model</th><th scope="col">5 ratings</th><th scope="col">10 ratings</th><th scope="col">20 ratings</th></tr></thead><tbody id="results-table"><tr><td colspan="4" style="text-align:left">Loading CSV…</td></tr></tbody></table></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:15px">Source: <a href="./experiment_results.csv" style="text-decoration:underline">experiment_results.csv</a> · 164 archived test episodes per model/setting · ± standard deviations and timing fields preserved in the CSV.</p>
+    </section>
+
+    <section class="section wrap">
+      <div class="head"><div><div class="overline">03 / Method selection</div><h2>Start simple. Earn complexity.</h2></div><p class="section-lead">Every method addresses the same few-shot problem, but with different assumptions about how useful preferences transfer between users and items.</p></div>
+      <div class="methods">
+        <article class="method"><div class="method-meta"><span class="chip">Baseline</span><span class="chip green">Low training overhead</span></div><h3>Linear regression</h3><p>Fit a new least-squares predictor to each user's support ratings. Tests whether an uncomplicated linear signal in item embeddings goes far enough.</p></article>
+        <article class="method"><div class="method-meta"><span class="chip">Baseline</span><span class="chip green">Similarity-based</span></div><h3>k-nearest neighbors</h3><p>Use cosine similarity between a query item and the user's support items to average nearby ratings. A fast, interpretable alternative to learned adaptation.</p></article>
+        <article class="method"><div class="method-meta"><span class="chip">Meta-learning</span><span class="chip">Attention</span></div><h3>Matching-network style</h3><p>Learn an embedding transformation and use soft attention over support items. Trained episodically to predict a new user's held-out ratings.</p></article>
+        <article class="method"><div class="method-meta"><span class="chip">Meta-learning</span><span class="chip">Gradient adaptation</span></div><h3>Reptile</h3><p>Meta-learn an initialization across training users, then take a few support-set gradient steps when adapting to a never-seen user.</p></article>
+      </div>
+    </section>
+
+    <section id="validation" class="section wrap">
+      <div class="head"><div><div class="overline">04 / Scientific discipline</div><h2>What I can—and can't—claim.</h2></div></div>
+      <div class="bottom-grid">
+        <div class="copy"><p><strong style="color:var(--text)">What was tested:</strong> An offline user-disjoint split; 5/10/20 support ratings per test user; up to 10 separate held-out rated items per query; NDCG and timing diagnostics. Model outputs were produced from code, not handcrafted for this page.</p><p><strong style="color:var(--text)">What remains unresolved:</strong></p><ul><li>Archive comparisons are unpaired and come from one experimental run.</li><li>Ranking only previously rated movies is not full-catalog retrieval.</li><li>Random user episodes do not model chronological deployment.</li><li>There is no demonstrated product lift, online A/B test, or causal effect.</li></ul><p>The next defensible step is to rerun the paired protocol over multiple seeds, report uncertainty on <em>per-user differences</em>, and add feature ablations and temporal evaluations.</p></div>
+        <aside class="callout"><h3>How to inspect the work</h3><p>The underlying Python pipeline contains dataset loading, self-supervised feature learning, four prediction strategies, episodic training, user-held-out evaluation, CSV reporting, and plots. I included unit tests and a result validator.</p><p><strong>Project status:</strong> educational research prototype. The original research proposal is archived separately from the empirical results.</p><a href="./README.md">Read reproduction instructions →</a><p style="margin:14px 0 0"><a href="./docs/original_research_proposal.pdf">Original proposal (PDF) →</a></p></aside>
+      </div>
+    </section>
+  </main>
+  <footer class="wrap"><span>© Ilyes Ouldsaada · Applied ML case study</span><span>Data: <a href="https://grouplens.org/datasets/movielens/100k/" rel="noopener noreferrer" target="_blank">GroupLens MovieLens-100K</a> · <a href="./experiment_results.csv">Download results CSV</a></span></footer>
+
+  <script>
+    'use strict';
+    const labels = {linear_regression:'Linear regression',knn:'k-nearest neighbors',matching_network:'Matching network',reptile:'Reptile'};
+    const colors = {linear_regression:'var(--blue)',knn:'var(--violet)',matching_network:'var(--orange)',reptile:'var(--lime)'};
+    const ordered = ['linear_regression','knn','matching_network','reptile'];
+    let records = [], selectedSize = 5;
+
+    function parseCsv(source) {
+      const lines = source.trim().split(/\r?\n/).filter(Boolean);
+      const fields = lines.shift().split(',').map(s => s.trim());
+      const required = ['model','support_size','ndcg_mean','n_episodes'];
+      if (!required.every(field => fields.includes(field))) throw new Error('Required CSV fields missing.');
+      return lines.map(line => {
+        const cells = line.split(',');
+        if (cells.length !== fields.length) throw new Error('Malformed results CSV row.');
+        return Object.fromEntries(fields.map((key,i) => [key, key === 'model' ? cells[i] : Number(cells[i])]));
+      });
+    }
+
+    function render() {
+      const subset = ordered.map(model => records.find(row => row.model === model && row.support_size === selectedSize));
+      if (subset.some(row => !row || !Number.isFinite(row.ndcg_mean))) throw new Error('Incomplete experiment data.');
+      const best = Math.max(...subset.map(row => row.ndcg_mean));
+      document.getElementById('chart').innerHTML = subset.map(row => {
+        const pct = Math.max(0, Math.min(100, row.ndcg_mean * 100));
+        return `<div class="chart-row"><span class="model-name">${labels[row.model]}</span><div class="track" aria-label="${labels[row.model]}: NDCG ${row.ndcg_mean.toFixed(4)}"><span class="fill" style="width:${pct.toFixed(2)}%;background:${colors[row.model]}"></span></div><span class="number" style="color:${row.ndcg_mean === best ? 'var(--lime)' : 'var(--text)'}">${row.ndcg_mean.toFixed(4)}</span></div>`;
+      }).join('');
+      document.getElementById('takeaway').innerHTML = selectedSize === 10
+        ? '<strong>What stands out:</strong> kNN had the highest recorded score with 10 support ratings. Complex meta-learning was not consistently strongest across settings. Because evaluation episodes differed by model, treat this as an exploratory observation, not evidence of superiority.'
+        : `<strong>What stands out:</strong> Reptile had the highest recorded score with ${selectedSize} support ratings. That is a descriptive observation only: the original unpaired episode draws prevent a fair winner claim.`;
+      document.querySelectorAll('[data-size]').forEach(button => button.setAttribute('aria-pressed',String(Number(button.dataset.size)===selectedSize)));
+    }
+
+    function renderTable() {
+      const bestBySize = Object.fromEntries([5,10,20].map(size => [size,Math.max(...records.filter(r=>r.support_size === size).map(r=>r.ndcg_mean))]));
+      document.getElementById('results-table').innerHTML = ordered.map(model => `<tr><td>${labels[model]}</td>${[5,10,20].map(size => {
+        const row = records.find(r=>r.model===model && r.support_size===size);
+        return `<td class="${row && row.ndcg_mean===bestBySize[size]?'best':''}">${row?row.ndcg_mean.toFixed(4):'—'}</td>`;
+      }).join('')}</tr>`).join('');
+    }
+
+    document.querySelectorAll('[data-size]').forEach(button => button.addEventListener('click',() => {
+      selectedSize = Number(button.dataset.size); if (records.length) render();
+    }));
+
+    fetch('./experiment_results.csv', {cache:'no-cache'})
+      .then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.text(); })
+      .then(csv => {
+        records = parseCsv(csv).filter(row => row.train_user_fraction === 1);
+        if (records.length !== 12 || records.some(row => !labels[row.model] || ![5,10,20].includes(row.support_size))) throw new Error('Unexpected results schema.');
+        render(); renderTable();
+      })
+      .catch(error => {
+        document.getElementById('chart').innerHTML = '<div id="load-error" role="alert"><strong>Could not load experiment_results.csv.</strong><p>Run <code>python -m http.server 8000</code> from the repository folder and open <code>http://localhost:8000</code>, or view this project on GitHub Pages.</p></div>';
+        document.getElementById('results-table').innerHTML = '<tr><td colspan="4" style="text-align:left">Results unavailable; check the CSV and server.</td></tr>';
+        console.error('Project result load error:',error);
+      });
+  </script>
+</body>
+</html>
